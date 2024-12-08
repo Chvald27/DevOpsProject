@@ -1,24 +1,19 @@
 import os
 
 class Config:
+    SECRET_KEY = os.environ.get('SECRET_KEY')
+
+    # SQLAlchemy Database URI
     SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://{os.getenv('DB_USER', 'postgres')}:"
-        f"{os.getenv('DB_PASSWORD', 'password')}@"
-        f"{os.getenv('DB_HOST', 'localhost')}:"
-        f"{os.getenv('DB_PORT', '5432')}/"
-        f"{os.getenv('DB_NAME', 'webappdb')}"
+        "postgresql://postgres:YourStrongPasswordHere@terraform-20241208071959927900000001.cl2gqc6scvwd.ca-central-1.rds.amazonaws.com:5432/webappdb"
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SECRET_KEY = os.getenv('SECRET_KEY', 'default_secret_key')
 
-class DevelopmentConfig(Config):
-    DEBUG = True
+    # Flask-Session configuration (if used)
+    SESSION_TYPE = "filesystem"
 
-class ProductionConfig(Config):
-    DEBUG = False
 
-config = {
-    "development": DevelopmentConfig,
-    "production": ProductionConfig,
-    "default": DevelopmentConfig,
-}
+
+
+
+

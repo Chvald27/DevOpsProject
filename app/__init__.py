@@ -1,24 +1,23 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from config import config
+from flask_session import Session
 
-# Initialize the SQLAlchemy object (shared across the app)
 db = SQLAlchemy()
 
-def create_app(config_name="default"):
-    """
-    Application factory function to create and configure the Flask app.
-    """
+def create_app():
     app = Flask(__name__)
-
-    # Load the configuration from the config file
-    app.config.from_object(config[config_name])
+    app.config.from_object("config.Config")  # This loads the SECRET_KEY
 
     # Initialize extensions
     db.init_app(app)
+    Session(app)
 
-    # Register Blueprints
+    # Register blueprints
     from app.routes import main
     app.register_blueprint(main)
 
+    with app.app_context():
+        db.create_all()
+
     return app
+

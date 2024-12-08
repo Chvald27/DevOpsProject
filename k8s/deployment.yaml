@@ -1,28 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: Webapp
-  labels:
-    app: Webapp
+  name: webapp-deployment
 spec:
-  replicas: 2
+  replicas: 3
   selector:
     matchLabels:
-      app: Webapp
+      app: webapp
   template:
     metadata:
       labels:
-        app: Webapp
+        app: webapp
     spec:
       containers:
-      - name: Webapp
-        image: <your-dockerhub-username>/Webapp:latest
+      - name: webapp
+        image: <DOCKER_USERNAME>/webapp:latest
         ports:
         - containerPort: 8080
-        env:
-        - name: DB_HOST
-          value: "<RDS-ENDPOINT>"  # Replace with your RDS endpoint
-        - name: DB_USER
-          value: "postgres"
-        - name: DB_PASSWORD
-          value: "P0stgr3$2024*"
+

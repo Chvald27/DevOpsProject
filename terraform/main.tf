@@ -110,7 +110,61 @@ resource "aws_security_group" "web_sg" {
   }
 }
 
-# 6. EC2 Instance for Jenkins
+# Security Group for RDS
+resource "aws_security_group" "rds_sg" {
+  name        = "rds-security-group"
+  description = "Allow PostgreSQL traffic"
+  vpc_id      = aws_vpc.main_vpc.id
+
+  ingress {
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] # Replace with specific IP ranges for security
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "rds-security-group"
+  }
+}
+
+# 6. RDS Subnet Group
+resource "aws_db_subnet_group" "rds_subnet_group" {
+  name       = "rds-subnet-group"
+  subnet_ids = [aws_subnet.subnet_1.id, aws_subnet.subnet_2.id]
+
+  tags = {
+    Name = "rds-subnet-group"
+  }
+}
+
+# 7. RDS Instance
+resource "aws_db_instance" "postgres" {
+  allocated_storage       = 20
+  engine                  = "postgres"
+  engine_version          = "17.2" # Update to your required version
+  instance_class          = "db.t4g.micro" # Free tier eligible
+  db_name                    = "webappdb" # Name of the database
+  username                = "postgres" # Master username
+  password                = "YourStrongPasswordHere" # Master password
+  publicly_accessible     = false
+  vpc_security_group_ids  = [aws_security_group.rds_sg.id]
+  db_subnet_group_name    = aws_db_subnet_group.rds_subnet_group.name
+  skip_final_snapshot     = true
+
+  tags = {
+    Name = "webapp-database"
+  }
+}
+
+# 8. EC2 Instance for Jenkins
 resource "aws_instance" "jenkins_instance" {
   ami           = "ami-0bee12a638c7a8942" # Update to your preferred AMI ID
   instance_type = "t2.micro"
@@ -124,7 +178,7 @@ resource "aws_instance" "jenkins_instance" {
   }
 }
 
-# 7. EKS Cluster
+# 9. EKS Cluster
 resource "aws_eks_cluster" "eks_cluster" {
   name     = "webapp-cluster"
   role_arn = aws_iam_role.eks_role.arn
