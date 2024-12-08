@@ -1,0 +1,23 @@
+# Ignore Python virtual environment
+venv/
+
+# Ignore Terraform cache and state files
+.terraform/
+*.tfstate
+*.tfstate.backup
+
+# Ignore IDE configuration files
+.idea/
+.vscode/
+
+# Ignore logs and temporary files
+*.log
+*.tmp
+
+# Ignore compiled Python files
+*.pyc
+__pycache__/
+
+# Ignore Docker files
+*.env
+
