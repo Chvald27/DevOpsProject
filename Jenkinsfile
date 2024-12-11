@@ -43,13 +43,13 @@ pipeline {
             steps {
                 // Ensure Python is installed and virtual environment is created properly
                 sh '''
-                which python3 || (echo "Python3 not installed" && exit 1)
-                python3 -m venv venv || (echo "Failed to create virtual environment" && exit 1)
-                source venv/bin/activate
-                pip install --upgrade pip
-                pip install -r requirements.txt || (echo "Failed to install dependencies" && exit 1)
-                python -m unittest discover -s app/tests || (echo "Tests failed" && exit 1)
-                '''
+        	which python3 || (echo "Python3 not installed" && exit 1)
+        	python3 -m venv venv || (echo "Failed to create virtual environment, check python3-venv installation" && exit 1)
+        	source venv/bin/activate
+        	pip install --upgrade pip
+        	pip install -r requirements.txt || (echo "Failed to install dependencies" && exit 1)
+        	python -m unittest discover -s app/tests || (echo "Tests failed" && exit 1)
+        	'''
             }
         }
 
