@@ -153,7 +153,7 @@ resource "aws_db_instance" "postgres" {
   instance_class          = "db.t4g.micro" # Free tier eligible
   db_name                    = "webappdb" # Name of the database
   username                = "postgres" # Master username
-  password                = "YourStrongPasswordHere" # Master password
+  password                = "DevOps2024*" # Master password
   publicly_accessible     = false
   vpc_security_group_ids  = [aws_security_group.rds_sg.id]
   db_subnet_group_name    = aws_db_subnet_group.rds_subnet_group.name
@@ -178,7 +178,21 @@ resource "aws_instance" "jenkins_instance" {
   }
 }
 
-# 9. EKS Cluster
+# 9. EC2 Instance for Docker
+resource "aws_instance" "docker_instance" {
+  ami           = "ami-0bee12a638c7a8942" # Update to your preferred AMI ID
+  instance_type = "t2.micro"
+  subnet_id     = aws_subnet.subnet_1.id
+  vpc_security_group_ids = [aws_security_group.web_sg.id] # Use vpc_security_group_ids instead of security_groups
+     
+  key_name      = "ClassCloud" # Update to your EC2 key pair
+      
+  tags = {
+    Name = "docker-instance"
+  }
+}
+
+# 10. EKS Cluster (already defined)
 resource "aws_eks_cluster" "eks_cluster" {
   name     = "webapp-cluster"
   role_arn = aws_iam_role.eks_role.arn
@@ -192,7 +206,7 @@ resource "aws_eks_cluster" "eks_cluster" {
   }
 }
 
-# IAM Role for EKS Cluster
+# IAM Role for EKS Cluster (already defined)
 resource "aws_iam_role" "eks_role" {
   name = "eks-role"
 
@@ -212,3 +226,69 @@ resource "aws_iam_role" "eks_role" {
 EOF
 }
 
+# Attach policies to the EKS Role
+resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
+  role       = aws_iam_role.eks_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+}
+
+resource "aws_iam_role_policy_attachment" "eks_service_policy" {
+  role       = aws_iam_role.eks_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
+}
+
+# Add EKS Node Group for Worker Nodes
+resource "aws_eks_node_group" "eks_nodes" {
+  cluster_name    = aws_eks_cluster.eks_cluster.name
+  node_group_name = "eks-node-group"
+  node_role_arn   = aws_iam_role.eks_node_role.arn
+  subnet_ids      = [aws_subnet.subnet_1.id, aws_subnet.subnet_2.id]
+
+  scaling_config {
+    desired_size = 2
+    min_size     = 1
+    max_size     = 3
+  }
+
+  instance_types = ["t3.medium"]
+
+  tags = {
+    Name = "eks-node-group"
+  }
+}
+
+# IAM Role for Worker Nodes
+resource "aws_iam_role" "eks_node_role" {
+  name = "eks-node-role"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "ec2.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+EOF
+}
+
+# Attach policies to the Worker Node Role
+resource "aws_iam_role_policy_attachment" "eks_worker_node_policy" {
+  role       = aws_iam_role.eks_node_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+}
+
+resource "aws_iam_role_policy_attachment" "eks_cni_policy" {
+  role       = aws_iam_role.eks_node_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSCNIPolicy"
+}
+
+resource "aws_iam_role_policy_attachment" "ec2_container_registry_policy" {
+  role       = aws_iam_role.eks_node_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+}
