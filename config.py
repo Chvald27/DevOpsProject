@@ -5,7 +5,8 @@ class Config:
 
     # SQLAlchemy Database URI
     SQLALCHEMY_DATABASE_URI = (
-        "postgresql://postgres:YourStrongPasswordHere@terraform-20241208071959927900000001.cl2gqc6scvwd.ca-central-1.rds.amazonaws.com:5432/webappdb"
+        
+"postgresql://postgres:DevOps2024*@terraform-20241208071959927900000001.cl2gqc6scvwd.ca-central-1.rds.amazonaws.com:5432/webappdb"
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 

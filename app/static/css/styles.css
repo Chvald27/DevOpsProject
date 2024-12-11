@@ -1,46 +1,131 @@
+/* Professional and clean styles for the WebApp */
+
+/* Global Styles */
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f9;
-    color: #333;
+    font-family: 'Roboto', Arial, sans-serif;
+    background: linear-gradient(120deg, #f0f2f5, #d9e4f5);
     margin: 0;
     padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    color: #333;
 }
 
 .container {
-    width: 80%;
-    margin: auto;
-    overflow: hidden;
-}
-
-h2 {
+    max-width: 400px;
+    padding: 30px;
+    background-color: white;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    border-radius: 15px;
     text-align: center;
 }
 
-form {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin: 20px;
+/* Heading */
+h2 {
+    font-size: 26px;
+    margin-bottom: 20px;
+    color: #333;
 }
 
-form input, form button {
-    margin: 5px;
-    padding: 10px;
-    width: 50%;
+/* Input Fields */
+form input[type="text"],
+form input[type="password"],
+form input[type="email"] {
+    width: 100%;
+    padding: 15px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    font-size: 16px;
+    color: #555;
+    background: #f9f9f9;
 }
 
+form input:focus {
+    outline: none;
+    border: 1px solid #007bff;
+    box-shadow: 0 0 8px rgba(0, 123, 255, 0.5);
+}
+
+/* Buttons */
+button {
+    width: 100%;
+    padding: 14px;
+    background-color: #007bff;
+    color: white;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+.alert {
+    color: red;
+    font-size: 14px;
+    margin-bottom: 10px;
+    text-align: left;
+}
+
+/* Table Styles */
 table {
     width: 100%;
+    margin-top: 20px;
     border-collapse: collapse;
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
 }
 
-table, th, td {
-    border: 1px solid #ddd;
-    padding: 8px;
-}
-
-th {
-    background-color: #f2f2f2;
+table th,
+table td {
+    padding: 12px;
     text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+table th {
+    background-color: #007bff;
+    color: white;
+}
+
+table td {
+    background-color: #f9f9f9;
+}
+
+/* Action Buttons */
+.action-buttons a,
+.action-buttons button {
+    padding: 10px 14px;
+    margin: 5px;
+    text-decoration: none;
+    font-size: 14px;
+    color: white;
+    border-radius: 8px;
+    display: inline-block;
+}
+
+.action-buttons a {
+    background-color: #17a2b8;
+}
+
+.action-buttons a:hover {
+    background-color: #117a8b;
+}
+
+.action-buttons button {
+    background-color: #dc3545;
+    border: none;
+    cursor: pointer;
+}
+
+.action-buttons button:hover {
+    background-color: #c82333;
 }
 
