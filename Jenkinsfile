@@ -1,4 +1,4 @@
-kpipeline {
+pipeline {
     agent any
 
     environment {
@@ -73,7 +73,7 @@ kpipeline {
         	kubectl apply -f k8s/deployment.yaml
         	kubectl apply -f k8s/service.yaml
         	'''
-    		}
+    	    }
   	}    
       }
 
