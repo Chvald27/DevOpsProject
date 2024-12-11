@@ -68,13 +68,14 @@ pipeline {
 
 	stage('Deploy to EKS') {
     	    steps {
-        	sh '''
-        	export KUBECONFIG=~/.kube/config
+        	withEnv(["KUBECONFIG=${env.KUBECONFIG}"]) {
+		sh '''
         	kubectl apply -f k8s/deployment.yaml
         	kubectl apply -f k8s/service.yaml
         	'''
     	    }
-  	}    
+  	  }
+	}    
       }
 
     post {
