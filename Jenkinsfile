@@ -15,6 +15,13 @@ pipeline {
     }
 
     stages {
+
+	stage('Cleanup Workspace') {
+    	    steps {
+        	deleteDir() // Deletes the workspace
+    	    }
+	}
+
         stage('Checkout Code') {
             steps {
                 // Clone the Git repository
