@@ -93,22 +93,6 @@ pipeline {
             }
         }
 
-stage('Deploy to EKS') {
-    steps {
-        withEnv(["KUBECONFIG=/home/ubuntu/.kube/config"]) {
-            sshagent(['Docker_VM']) {
-                sh '''
-                ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 "
-		    export KUBECONFIG=/home/ubuntu/.kube/config &&
-                    kubectl apply -f /home/ubuntu/k8s/deployment.yaml --validate=false &&
-                    kubectl apply -f /home/ubuntu/k8s/service.yaml --validate=false
-                "
-                '''
-            }
-        }
-    }
-}
-
     }
 
     post {
