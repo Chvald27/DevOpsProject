@@ -1,0 +1,30 @@
+pipeline {
+    agent any
+    stages {
+        stage('Pull Image') {
+            steps {
+                sshagent(['docker-server']) {
+                    sh 'ssh root@15.223.184.199 "docker pull chvald27/webapp:latest“’
+                }
+            }
+        }
+ 
+        stage('Run Container') {
+            steps {
+                sshagent(['docker-server']) {
+                    sh '''
+                        ssh root@15.223.184.199 "docker stop main-container || true"
+                        ssh root@15.223.184.199 "docker rm main-container || true"
+                        ssh root@15.223.184.199 "docker run --name main-container -d -p 8082:80 chvald27/webapp:latest"
+                    '''
+                }
+            }
+        }
+ 
+        stage('Test Website') {
+            steps {
+                sh 'curl -I http://15.223.184.199:8082 || exit 1'
+            }
+        }
+    }
+}
