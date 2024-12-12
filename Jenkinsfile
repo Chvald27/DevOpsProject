@@ -11,11 +11,10 @@ pipeline {
         IMAGE_TAG = 'latest'
 
         // Kubernetes Config File (stored as Jenkins credential)
-        KUBECONFIG = credentials('kube-config') // Ensure kube-config is added in Jenkins credentials
+        KUBE_CONFIG = credentials('kube-config') // Ensure kube-config is added in Jenkins credentials
     }
 
     stages {
-
         stage('Cleanup Workspace') {
             steps {
                 deleteDir() // Deletes the workspace
@@ -33,38 +32,40 @@ pipeline {
             steps {
                 sshagent(['Docker_VM']) {
                     sh '''
-                    ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 'docker --version || echo "Docker not found"'
+                    ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 docker --version || echo "Docker not found"
                     '''
                 }
             }
         }
 
-	stage('Build and Test') {
-    		steps {
-        	sshagent(['Docker_VM']) {
-            sh '''
-            # Transfer code to Docker VM
-            scp -o StrictHostKeyChecking=no -r * ubuntu@15.223.184.199:/home/ubuntu/app
-            
-            # Execute Python environment setup and testing
-            ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 '
-                cd /home/ubuntu/app &&
-                python3 -m venv venv &&
-                source venv/bin/activate &&
-                pip install -r requirements.txt &&
-                python -m unittest discover -s app/tests
-            '
-            '''
+        stage('Build and Test') {
+            steps {
+                sshagent(['Docker_VM']) {
+                    sh '''
+                    # Copy application files to Docker VM (excluding unnecessary files like venv)
+                    scp -o StrictHostKeyChecking=no -r Dockerfile Jenkinsfile __pycache__ app config.py flask_session k8s requirements.txt run.py terraform ubuntu@15.223.184.199:/home/ubuntu/app
+
+                    # Set up environment and run tests on Docker VM
+                    ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 "
+                        cd /home/ubuntu/app &&
+                        python3 -m venv venv &&
+                        source venv/bin/activate &&
+                        pip install -r requirements.txt &&
+                        python -m unittest discover -s app/tests
+                    "
+                    '''
+                }
+            }
         }
-    }
-}
+
         stage('Docker Build') {
             steps {
                 sshagent(['Docker_VM']) {
                     sh '''
-                    ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 '
-                    docker build -t $IMAGE_NAME:$IMAGE_TAG .
-                    ' || (echo "Docker build failed" && exit 1)
+                    ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 "
+                        cd /home/ubuntu/app &&
+                        docker build -t $IMAGE_NAME:$IMAGE_TAG .
+                    "
                     '''
                 }
             }
@@ -75,11 +76,11 @@ pipeline {
                 sshagent(['Docker_VM']) {
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                         sh '''
-                        ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 '
-                        docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-                        docker tag $IMAGE_NAME:$IMAGE_TAG $DOCKER_USERNAME/$IMAGE_NAME:$IMAGE_TAG
-                        docker push $DOCKER_USERNAME/$IMAGE_NAME:$IMAGE_TAG
-                        ' || (echo "Docker push failed" && exit 1)
+                        ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 "
+                            docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD &&
+                            docker tag $IMAGE_NAME:$IMAGE_TAG $DOCKER_USERNAME/$IMAGE_NAME:$IMAGE_TAG &&
+                            docker push $DOCKER_USERNAME/$IMAGE_NAME:$IMAGE_TAG
+                        "
                         '''
                     }
                 }
@@ -88,10 +89,10 @@ pipeline {
 
         stage('Deploy to EKS') {
             steps {
-                withEnv(["KUBECONFIG=${KUBECONFIG}"]) {
+                withEnv(["KUBECONFIG=${env.KUBE_CONFIG}"]) {
                     sh '''
-                    kubectl apply -f k8s/deployment.yaml || (echo "Failed to deploy deployment.yaml" && exit 1)
-                    kubectl apply -f k8s/service.yaml || (echo "Failed to deploy service.yaml" && exit 1)
+                    kubectl apply -f k8s/deployment.yaml
+                    kubectl apply -f k8s/service.yaml
                     '''
                 }
             }
