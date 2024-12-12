@@ -17,7 +17,7 @@ pipeline {
             steps {
                 sshagent(['Docker_VM']) {
                     sh '''
-		    scp -r * ubuntu@:/opt/DevOpsProject/
+		    scp -r * ubuntu@15.223.184.199:/opt/DevOpsProject/
  
                     '''
                 }
