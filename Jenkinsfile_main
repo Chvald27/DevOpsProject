@@ -4,7 +4,7 @@ pipeline {
         stage('Pull Image') {
             steps {
                 sshagent(['Docker_VM']) {
-                    sh 'ssh root@15.223.184.199 "docker pull chvald27/webapp:latest“'
+                    sh 'ssh root@15.223.184.199 "docker pull chvald27/webapp:latest"'
                 }
             }
         }
