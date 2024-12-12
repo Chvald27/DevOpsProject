@@ -93,18 +93,20 @@ stage('Docker Build') {
             }
         }
 
-        stage('Deploy to EKS') {
-            steps {
-                withEnv(["KUBECONFIG=${env.KUBE_CONFIG}"]) {
-                    sh '''
-                    kubectl apply -f k8s/deployment.yaml
-                    kubectl apply -f k8s/service.yaml
-                    '''
-                }
+stage('Deploy to EKS') {
+    steps {
+        withEnv(["KUBECONFIG=${KUBECONFIG}"]) {
+            sshagent(['Docker_VM']) {
+                sh '''
+                ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 "
+                    kubectl apply -f /home/ubuntu/k8s/deployment.yaml &&
+                    kubectl apply -f /home/ubuntu/k8s/service.yaml
+                "
+                '''
             }
         }
     }
-
+}
     post {
         always {
             echo "Pipeline completed."
