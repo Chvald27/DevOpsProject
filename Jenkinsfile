@@ -38,25 +38,31 @@ pipeline {
             }
         }
 
-        stage('Build and Test') {
-            steps {
-                sshagent(['Docker_VM']) {
-                    sh '''
-                    # Copy application files to Docker VM (excluding unnecessary files like venv)
-                    scp -o StrictHostKeyChecking=no -r Dockerfile Jenkinsfile __pycache__ app config.py flask_session k8s requirements.txt run.py terraform ubuntu@15.223.184.199:/home/ubuntu/app
+	stage('Build and Test') {
+    		steps {
+        sshagent(['Docker_VM']) {
+            sh '''
+            # Install required dependencies
+            ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 "
+                sudo apt-get update &&
+                sudo apt-get install -y libpq-dev
+            "
+            
+            # Copy application files to Docker VM (excluding unnecessary files like venv)
+            scp -o StrictHostKeyChecking=no -r Dockerfile Jenkinsfile __pycache__ app config.py flask_session k8s requirements.txt run.py terraform ubuntu@15.223.184.199:/home/ubuntu/app
 
-                    # Set up environment and run tests on Docker VM
-                    ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 "
-                        cd /home/ubuntu/app &&
-                        python3 -m venv venv &&
-                        source venv/bin/activate &&
-                        pip install -r requirements.txt &&
-                        python -m unittest discover -s app/tests
-                    "
-                    '''
-                }
-            }
+            # Set up environment and run tests on Docker VM
+            ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 "
+                cd /home/ubuntu/app &&
+                python3 -m venv venv &&
+                source venv/bin/activate &&
+                pip install -r requirements.txt &&
+                python -m unittest discover -s app/tests
+            "
+            '''
         }
+    }
+}
 
         stage('Docker Build') {
             steps {
