@@ -43,16 +43,16 @@ stage('Build and Test') {
     steps {
         sshagent(['Docker_VM']) {
             sh '''
-            # Ensure dependencies are installed
+            # Install required dependencies
             ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 "
                 sudo apt-get update &&
                 sudo apt-get install -y libpq-dev
             "
 
-            # Transfer application files
+            # Transfer application files to the VM
             scp -o StrictHostKeyChecking=no -r app/ config.py flask_session k8s requirements.txt run.py terraform ubuntu@15.223.184.199:/home/ubuntu/
 
-            # Run tests
+            # Run unit tests
             ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 "
                 cd /home/ubuntu &&
                 python3 -m venv venv &&
