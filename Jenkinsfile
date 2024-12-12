@@ -94,18 +94,19 @@ pipeline {
             }
         }
 
-        stage('Run Container') {
-            steps {
-                sshagent(['Docker_VM']) {
-                    sh '''
-                        ssh ubuntu@15.223.184.199 "
-                            docker ps -a --filter 'name=$IMAGE_NAME-container' | grep $IMAGE_NAME-container && docker stop $IMAGE_NAME-container && docker rm $IMAGE_NAME-container || true;
-                            docker run --name $IMAGE_NAME-container -d -p 8081:80 $IMAGE_NAME:$IMAGE_VERSION_TAG
-                        "
-                    '''
-                }
-            }
+	stage('Run Container') {
+    	steps {
+        sshagent(['Docker_VM']) {
+            sh '''
+                ssh ubuntu@15.223.184.199 "
+                    docker ps -a --filter 'name=webapp-container' | grep webapp-container && docker stop webapp-container && docker rm webapp-container || true;
+                    docker run --name webapp-container -d -p 8081:80 chvald27/webapp:v1
+                "
+            '''
         }
+    	}
+	}
+
     }
 
     post {
