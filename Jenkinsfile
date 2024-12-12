@@ -107,6 +107,7 @@ stage('Deploy to EKS') {
         }
     }
 }
+
     post {
         always {
             echo "Pipeline completed."
