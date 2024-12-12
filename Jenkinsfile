@@ -9,9 +9,10 @@ pipeline {
         // Docker Image Details
         IMAGE_NAME = 'webapp'
         IMAGE_TAG = 'latest'
+        IMAGE_VERSION_TAG = 'v1'
 
-        // Kubernetes Config File (stored as Jenkins credential)
-        KUBE_CONFIG = credentials('kube-config') // Ensure kube-config is added in Jenkins credentials
+        // Docker Hub credentials
+        DOCKER_CREDENTIALS_ID = 'docker-hub-credentials'
     }
 
     stages {
@@ -70,22 +71,22 @@ pipeline {
                     sh '''
                     ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 "
                         cd /home/ubuntu/app &&
-                        sudo docker build -t webapp:latest .
+                        sudo docker build -t $IMAGE_NAME:$IMAGE_TAG .
                     "
                     '''
                 }
             }
         }
 
-        stage('Docker Push') {
+        stage('Docker Tag and Push') {
             steps {
                 sshagent(['Docker_VM']) {
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                         sh '''
                         ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 "
                             docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD &&
-                            docker tag $IMAGE_NAME:$IMAGE_TAG $DOCKER_USERNAME/$IMAGE_NAME:$IMAGE_TAG &&
-                            docker push $DOCKER_USERNAME/$IMAGE_NAME:$IMAGE_TAG
+                            docker tag $IMAGE_NAME:$IMAGE_TAG $DOCKER_USERNAME/$IMAGE_NAME:$IMAGE_VERSION_TAG &&
+                            docker push $DOCKER_USERNAME/$IMAGE_NAME:$IMAGE_VERSION_TAG
                         "
                         '''
                     }
@@ -93,6 +94,19 @@ pipeline {
             }
         }
 
+        stage('Run Docker Container') {
+            steps {
+                sshagent(['Docker_VM']) {
+                    sh '''
+                    ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 "
+                        docker stop $IMAGE_NAME || true &&
+                        docker rm $IMAGE_NAME || true &&
+                        docker run -d --name $IMAGE_NAME -p 8080:80 $DOCKER_USERNAME/$IMAGE_NAME:$IMAGE_VERSION_TAG
+                    "
+                    '''
+                }
+            }
+        }
     }
 
     post {
