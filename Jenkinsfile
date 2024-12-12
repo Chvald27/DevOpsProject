@@ -65,14 +65,13 @@ pipeline {
             }
         }
 
-
-	stage('Docker Build') {
+        stage('Docker Build') {
             steps {
                 sshagent(['Docker_VM']) {
                     sh '''
                     ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 "
                         cd /home/ubuntu/app &&
-                        sudo docker build -t webapp:latest .
+                        sudo docker build -t $IMAGE_NAME:$IMAGE_TAG .
                     "
                     '''
                 }
@@ -82,12 +81,12 @@ pipeline {
         stage('Docker Push') {
             steps {
                 sshagent(['Docker_VM']) {
-                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                    withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                         sh '''
                         ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 "
                             docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD &&
-                            docker tag $IMAGE_NAME:$IMAGE_TAG $DOCKER_USERNAME/$IMAGE_NAME:$IMAGE_TAG &&
-                            docker push $DOCKER_USERNAME/$IMAGE_NAME:$IMAGE_TAG
+                            docker tag $IMAGE_NAME:$IMAGE_TAG $DOCKER_USERNAME/$IMAGE_NAME:$IMAGE_VERSION_TAG &&
+                            docker push $DOCKER_USERNAME/$IMAGE_NAME:$IMAGE_VERSION_TAG
                         "
                         '''
                     }
@@ -95,6 +94,18 @@ pipeline {
             }
         }
 
+        stage('Run Container') {
+            steps {
+                sshagent(['Docker_VM']) {
+                    sh '''
+                        ssh ubuntu@15.223.184.199 "
+                            docker ps -a --filter 'name=$IMAGE_NAME-container' | grep $IMAGE_NAME-container && docker stop $IMAGE_NAME-container && docker rm $IMAGE_NAME-container || true;
+                            docker run --name $IMAGE_NAME-container -d -p 8081:80 $IMAGE_NAME:$IMAGE_VERSION_TAG
+                        "
+                    '''
+                }
+            }
+        }
     }
 
     post {
