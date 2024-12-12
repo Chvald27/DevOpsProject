@@ -99,8 +99,9 @@ stage('Deploy to EKS') {
             sshagent(['Docker_VM']) {
                 sh '''
                 ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 "
-                    kubectl apply -f /home/ubuntu/k8s/deployment.yaml &&
-                    kubectl apply -f /home/ubuntu/k8s/service.yaml
+		    export KUBECONFIG=/home/ubuntu/.kube/config &&
+                    kubectl apply -f /home/ubuntu/k8s/deployment.yaml --validate=false &&
+                    kubectl apply -f /home/ubuntu/k8s/service.yaml --validate=false
                 "
                 '''
             }
