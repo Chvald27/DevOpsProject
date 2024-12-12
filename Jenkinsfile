@@ -1,37 +1,79 @@
 pipeline {
     agent any
+
     environment {
-        SERVER_IP = '15.223.184.199'
+        // Git Repository
+        REPO_NAME = 'Chvald27/DevOpsProject'
+        BRANCH_NAME = 'develop'
+
+        // Docker Image Details
+        IMAGE_NAME = 'webapp'
+        IMAGE_TAG = 'latest'
+        IMAGE_VERSION_TAG = 'v1'
+
+        // Docker Hub credentials
+        DOCKER_CREDENTIALS_ID = 'docker-hub-credentials'
     }
+
     stages {
-        stage('Cleanup') {
+        stage('Cleanup Workspace') {
             steps {
-                cleanWs()
+                deleteDir() // Deletes the workspace
             }
         }
 
         stage('Checkout Code') {
             steps {
+                // Clone the Git repository
                 checkout scm
             }
         }
 
-        stage('Copy Files to Remote Server') {
+        stage('Access Docker VM') {
             steps {
                 sshagent(['Docker_VM']) {
                     sh '''
-                        ssh ubuntu@${SERVER_IP} "mkdir -p /opt/DevOpsProject"
-                        scp -r * ubuntu@${SERVER_IP}:/opt/DevOpsProject/
+                    ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 docker --version || echo "Docker not found"
                     '''
                 }
             }
         }
 
-        stage('Build Image') {
+        stage('Build and Test') {
             steps {
                 sshagent(['Docker_VM']) {
                     sh '''
-                        ssh ubuntu@${SERVER_IP} "cd /opt/DevOpsProject && docker build -t flask-app:develop-${BUILD_ID} ."
+                    # Install required dependencies
+                    ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 "
+                        sudo apt-get update &&
+                        sudo apt-get install -y libpq-dev
+                    "
+
+                    # Transfer application files to the VM
+                    scp -o StrictHostKeyChecking=no -r app/ config.py flask_session k8s requirements.txt run.py terraform ubuntu@15.223.184.199:/home/ubuntu/
+
+                    # Run unit tests
+                    ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 "
+                        cd /home/ubuntu &&
+                        python3 -m venv venv &&
+                        source venv/bin/activate &&
+                        pip install -r requirements.txt &&
+                        python -m unittest discover -s /home/ubuntu/app/tests -p 'test_*.py'
+                    "
+                    '''
+                }
+            }
+        }
+
+
+	stage('Docker Build') {
+            steps {
+                sshagent(['Docker_VM']) {
+                    sh '''
+                    ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 "
+                        cd /home/ubuntu/app &&
+                        sudo docker build -t webapp:latest .
+                    "
                     '''
                 }
             }
@@ -41,7 +83,7 @@ pipeline {
             steps {
                 sshagent(['Docker_VM']) {
                     sh '''
-                        ssh ubuntu@${SERVER_IP} "
+                        ssh ubuntu@15.223.184.199 "
                             docker ps -a --filter 'name=flask-app-container' | grep flask-app-container && docker stop flask-app-container && docker rm flask-app-container || true
                             docker run --name flask-app-container -d -p 8081:80 flask-app:develop-${BUILD_ID}
                         "
@@ -49,33 +91,31 @@ pipeline {
                 }
             }
         }
-
-        stage('Test Website') {
-            steps {
-                sh '''
-                    curl -f -I http://${SERVER_IP}:8081 || exit 1
-                '''
-            }
-        }
-
-        stage('Push Image') {
+        
+        stage('Docker Push') {
             steps {
                 sshagent(['Docker_VM']) {
-                    withCredentials([usernamePassword(credentialsId: 'dockerhub-auth', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                         sh '''
-                            ssh ubuntu@${SERVER_IP} "
-                                docker login -u $USERNAME -p $PASSWORD &&
-                                docker tag flask-app:develop-${BUILD_ID} $USERNAME/flask-app:latest &&
-                                docker tag flask-app:develop-${BUILD_ID} $USERNAME/flask-app:develop-${BUILD_ID} &&
-                                docker push $USERNAME/flask-app:latest &&
-                                docker push $USERNAME/flask-app:develop-${BUILD_ID}
-                            "
+                        ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 "
+                            docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD &&
+                            docker tag $IMAGE_NAME:$IMAGE_TAG $DOCKER_USERNAME/$IMAGE_NAME:$IMAGE_TAG &&
+                            docker push $DOCKER_USERNAME/$IMAGE_NAME:$IMAGE_TAG
+                        "
                         '''
                     }
                 }
             }
         }
+
+    }
+
+    post {
+        always {
+            echo "Pipeline completed."
+        }
+        failure {
+            echo "Pipeline failed!"
+        }
     }
 }
-
-
