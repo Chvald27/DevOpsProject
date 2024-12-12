@@ -101,7 +101,7 @@ pipeline {
                     ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 "
                         docker stop $IMAGE_NAME || true &&
                         docker rm $IMAGE_NAME || true &&
-                        docker run -d --name $IMAGE_NAME -p 8080:80 $DOCKER_USERNAME/$IMAGE_NAME:$IMAGE_VERSION_TAG
+                        docker run -d --name webapp -p 8080:80 $DOCKER_USERNAME/webapp:1
                     "
                     '''
                 }
