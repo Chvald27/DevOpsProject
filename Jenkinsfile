@@ -17,8 +17,7 @@ pipeline {
             steps {
                 sshagent(['Docker_VM']) {
                     sh '''
-		    scp -r * root@15.223.184.199:/opt/DevOpsProject/
- 
+		    scp -r * root@15.223.184.199:/opt/DevOpsProject/ 
                     '''
                 }
             }
@@ -28,7 +27,7 @@ pipeline {
             steps {
                 sshagent(['Docker_VM']) {
                     sh '''
-          root    ssh root@15.223.184.199 "cd /opt/DevOpsProject && docker build -t flask-app:develop-${BUILD_ID} ."
+           ssh root@15.223.184.199 "cd /opt/DevOpsProject && docker build -t flask-app:develop-${BUILD_ID} ."
                     '''
                 }
             }
@@ -38,7 +37,7 @@ pipeline {
             steps {
                 sshagent(['Docker_VM']) {
                     sh '''
-          root    ssh root@15.223.184.199 "docker stop flask-app-container || true && docker rm flask-app-container || true && docker run --name flask-app-container -d -p 8080:8080 
+          ssh root@15.223.184.199 "docker stop flask-app-container || true && docker rm flask-app-container || true && docker run --name flask-app-container -d -p 8080:8080 
 flask-app:develop-${BUILD_ID}"
                     '''
                 }
@@ -49,7 +48,7 @@ flask-app:develop-${BUILD_ID}"
             steps {
                 sshagent(['Docker_VM']) {
                     sh '''
-          root    ssh root@15.223.184.199 "curl -I http://15.223.184.199:8080"
+          ssh root@15.223.184.199 "curl -I http://15.223.184.199:8080"
                     '''
                 }
             }
@@ -60,10 +59,10 @@ flask-app:develop-${BUILD_ID}"
                 sshagent(['Docker_VM']) {
                     withCredentials([usernamePassword(credentialsId: 'dockerhub-auth', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                         sh '''
-              root    ssh root@15.223.184.199 "docker tag flask-app:develop-${BUILD_ID} $USERNAME/flask-app:latest"
-              root    ssh root@15.223.184.199 "docker tag flask-app:develop-${BUILD_ID} $USERNAME/flask-app:develop-${BUILD_ID}"
-              root    ssh root@15.223.184.199 "docker push $USERNAME/flask-app:latest"
-              root    ssh root@15.223.184.199 "docker push $USERNAME/flask-app:develop-${BUILD_ID}"
+              ssh root@15.223.184.199 "docker tag flask-app:develop-${BUILD_ID} $USERNAME/flask-app:latest"
+              ssh root@15.223.184.199 "docker tag flask-app:develop-${BUILD_ID} $USERNAME/flask-app:develop-${BUILD_ID}"
+              ssh root@15.223.184.199 "docker push $USERNAME/flask-app:latest"
+              ssh root@15.223.184.199 "docker push $USERNAME/flask-app:develop-${BUILD_ID}"
                         '''
                     }
                 }
