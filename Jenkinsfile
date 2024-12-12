@@ -65,28 +65,29 @@ pipeline {
             }
         }
 
-        stage('Docker Build') {
+
+	stage('Docker Build') {
             steps {
                 sshagent(['Docker_VM']) {
                     sh '''
                     ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 "
                         cd /home/ubuntu/app &&
-                        sudo docker build -t $IMAGE_NAME:$IMAGE_TAG .
+                        sudo docker build -t webapp:latest .
                     "
                     '''
                 }
             }
         }
 
-        stage('Docker Tag and Push') {
+        stage('Docker Push') {
             steps {
                 sshagent(['Docker_VM']) {
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                         sh '''
                         ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 "
                             docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD &&
-                            docker tag $IMAGE_NAME:$IMAGE_TAG $DOCKER_USERNAME/$IMAGE_NAME:$IMAGE_VERSION_TAG &&
-                            docker push $DOCKER_USERNAME/$IMAGE_NAME:$IMAGE_VERSION_TAG
+                            docker tag $IMAGE_NAME:$IMAGE_TAG $DOCKER_USERNAME/$IMAGE_NAME:$IMAGE_TAG &&
+                            docker push $DOCKER_USERNAME/$IMAGE_NAME:$IMAGE_TAG
                         "
                         '''
                     }
@@ -94,19 +95,6 @@ pipeline {
             }
         }
 
-        stage('Run Docker Container') {
-            steps {
-                sshagent(['Docker_VM']) {
-                    sh '''
-                    ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 "
-                        docker stop $IMAGE_NAME || true &&
-                        docker rm $IMAGE_NAME || true &&
-                        docker run -d --name webapp -p 8080:80 $DOCKER_USERNAME/webapp:1
-                    "
-                    '''
-                }
-            }
-        }
     }
 
     post {
