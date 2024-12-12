@@ -79,19 +79,6 @@ pipeline {
             }
         }
 
-        stage('Run Container') {
-            steps {
-                sshagent(['Docker_VM']) {
-                    sh '''
-                        ssh ubuntu@15.223.184.199 "
-                            docker ps -a --filter 'name=flask-app-container' | grep flask-app-container && docker stop flask-app-container && docker rm flask-app-container || true
-                            docker run --name flask-app-container -d -p 8081:80 flask-app:develop-${BUILD_ID}
-                        "
-                    '''
-                }
-            }
-        }
-        
         stage('Docker Push') {
             steps {
                 sshagent(['Docker_VM']) {
@@ -119,3 +106,4 @@ pipeline {
         }
     }
 }
+
