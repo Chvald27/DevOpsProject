@@ -38,45 +38,45 @@ pipeline {
             }
         }
 
+        stage('Build and Test') {
+            steps {
+                sshagent(['Docker_VM']) {
+                    sh '''
+                    # Install required dependencies
+                    ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 "
+                        sudo apt-get update &&
+                        sudo apt-get install -y libpq-dev
+                    "
 
-stage('Build and Test') {
-    steps {
-        sshagent(['Docker_VM']) {
-            sh '''
-            # Install required dependencies
-            ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 "
-                sudo apt-get update &&
-                sudo apt-get install -y libpq-dev
-            "
+                    # Transfer application files to the VM
+                    scp -o StrictHostKeyChecking=no -r app/ config.py flask_session k8s requirements.txt run.py terraform ubuntu@15.223.184.199:/home/ubuntu/
 
-            # Transfer application files to the VM
-            scp -o StrictHostKeyChecking=no -r app/ config.py flask_session k8s requirements.txt run.py terraform ubuntu@15.223.184.199:/home/ubuntu/
-
-            # Run unit tests
-            ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 "
-                cd /home/ubuntu &&
-                python3 -m venv venv &&
-                source venv/bin/activate &&
-                pip install -r requirements.txt &&
-                python -m unittest discover -s /home/ubuntu/app/tests -p 'test_*.py'
-            "
-            '''
+                    # Run unit tests
+                    ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 "
+                        cd /home/ubuntu &&
+                        python3 -m venv venv &&
+                        source venv/bin/activate &&
+                        pip install -r requirements.txt &&
+                        python -m unittest discover -s /home/ubuntu/app/tests -p 'test_*.py'
+                    "
+                    '''
+                }
+            }
         }
-    }
-}
 
-stage('Docker Build') {
-    steps {
-        sshagent(['Docker_VM']) {
-            sh '''
-            ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 "
-                cd /home/ubuntu/app &&
-                sudo docker build -t webapp:latest .
-            "
-            '''
+        stage('Docker Build') {
+            steps {
+                sshagent(['Docker_VM']) {
+                    sh '''
+                    ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 "
+                        cd /home/ubuntu/app &&
+                        sudo docker build -t webapp:latest .
+                    "
+                    '''
+                }
+            }
         }
-    }
-}
+
         stage('Docker Push') {
             steps {
                 sshagent(['Docker_VM']) {
@@ -93,20 +93,21 @@ stage('Docker Build') {
             }
         }
 
-stage('Deploy to EKS') {
-    steps {
-        withEnv(["KUBECONFIG=${KUBECONFIG}"]) {
-            sshagent(['Docker_VM']) {
-                sh '''
-                ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 "
-                    kubectl apply -f /home/ubuntu/k8s/deployment.yaml &&
-                    kubectl apply -f /home/ubuntu/k8s/service.yaml
-                "
-                '''
+        stage('Deploy to EKS') {
+            steps {
+                withEnv(["KUBECONFIG=${KUBE_CONFIG}"]) {
+                    sshagent(['Docker_VM']) {
+                        sh '''
+                        ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 "
+                            kubectl apply -f /home/ubuntu/k8s/deployment.yaml &&
+                            kubectl apply -f /home/ubuntu/k8s/service.yaml
+                        "
+                        '''
+                    }
+                }
             }
         }
     }
-}
 
     post {
         always {
