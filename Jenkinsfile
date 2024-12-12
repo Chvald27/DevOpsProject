@@ -65,19 +65,18 @@ stage('Build and Test') {
     }
 }
 
-        stage('Docker Build') {
-            steps {
-                sshagent(['Docker_VM']) {
-                    sh '''
-                    ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 "
-                        cd /home/ubuntu/app &&
-                        docker build -t $IMAGE_NAME:$IMAGE_TAG .
-                    "
-                    '''
-                }
-            }
+stage('Docker Build') {
+    steps {
+        sshagent(['Docker_VM']) {
+            sh '''
+            ssh -o StrictHostKeyChecking=no ubuntu@15.223.184.199 "
+                cd /home/ubuntu/app &&
+                sudo docker build -t webapp:latest .
+            "
+            '''
         }
-
+    }
+}
         stage('Docker Push') {
             steps {
                 sshagent(['Docker_VM']) {
