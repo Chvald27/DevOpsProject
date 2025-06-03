@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <title>Dashboard</title>
+</head>
+<body>
+    <div class="container">
+        <h2>Welcome, {{ user.username }}</h2>
+        {% if current_user.role != 'user' %}
+            <li><a href="{{ url_for('main.list_users') }}" class="btn btn-primary">Manage Users</a></li>
+        {% endif %}
+        <!--<a href="{{ url_for('main.list_users') }}" class="btn btn-primary">Manage Users</a>-->
+        <br><br>
+        <a href="{{ url_for('main.logout') }}" class="btn btn-danger">Logout</a>
+    </div>
+</body>
+</html>
+
